@@ -1,0 +1,263 @@
+Program.Sub.ScreenSU.Start
+gui.Client..create
+gui.Client..caption("Paychex")
+gui.Client..size(1740,2790)
+gui.Client..position(0,0)
+gui.Client..event(unload,unload)
+gui.Client..alwaysontop(True)
+gui.Client..fontname("arial")
+gui.Client..fontsize(8)
+gui.Client..forecolor(0)
+gui.Client..fontstyle(False,False,False,False,False)
+gui.Client..BackColor(-2147483633)
+gui.Client..controlbox(True)
+gui.Client..maxbutton(True)
+gui.Client..minbutton(True)
+gui.Client..mousepointer(0)
+gui.Client..moveable(True)
+gui.Client..sizeable(True)
+gui.Client..ShowInTaskBar(True)
+gui.Client..titlebar(True)
+gui.Client.txt1.create(textbox)
+gui.Client.txt1.text("")
+gui.Client.txt1.visible(True)
+gui.Client.txt1.size(1215,315)
+gui.Client.txt1.zorder(0)
+gui.Client.txt1.position(200,400)
+gui.Client.txt1.enabled(True)
+gui.Client.txt1.fontname("arial")
+gui.Client.txt1.fontsize(8)
+gui.Client.txt1.maxLength(3)
+gui.Client.txt1.BackColor(-2147483643)
+gui.Client.lbl1.create(label)
+gui.Client.lbl1.caption("Client Number")
+gui.Client.lbl1.backstyle(0)
+gui.Client.lbl1.visible(True)
+gui.Client.lbl1.size(1095,255)
+gui.Client.lbl1.zorder(1)
+gui.Client.lbl1.position(200,200)
+gui.Client.lbl1.enabled(True)
+gui.Client.lbl1.fontname("arial")
+gui.Client.lbl1.fontsize(8)
+gui.Client.lbl1.BackColor(-2147483633)
+gui.Client.cmdExport.create(button)
+gui.Client.cmdExport.caption("OK")
+gui.Client.cmdExport.visible(True)
+gui.Client.cmdExport.size(975,375)
+gui.Client.cmdExport.zorder(0)
+gui.Client.cmdExport.position(300,1700)
+gui.Client.cmdExport.enabled(True)
+gui.Client.cmdExport.fontname("arial")
+gui.Client.cmdExport.fontsize(8)
+gui.Client.cmdExport.event(click,Process)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Variable.Global.DSN.Declare(String)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Modified by AGM For  Quote 6177
+'Custom Paychex Export
+'Hook: 15290
+'For use with SF Control>Transactions>Transfer labor to payroll
+'Program Payroll Export
+
+'Shift Field will now be blank
+'Right justify hours to field 70 (63-70)
+'Changed file name to 079P_TA.TXT where 079 is the client name
+'Changed file location to c:\paychex\
+
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+Gui.Client..Show
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4037_Paychex_Payroll_export_0002.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Main.End
+
+Program.Sub.Process.Start
+F.Intrinsic.Control.SetErrorHandler("Process_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+Variable.local.export.declare(String)
+Variable.local.export.redim(0,6)
+Variable.local.hold.declare(String)
+Variable.local.query.declare(String)
+Variable.local.DIR.declare(String)
+Variable.local.date.declare(String)
+Variable.local.filename.declare(String)
+Variable.local.sResult.declare(String)
+Variable.Local.time.Declare(String)
+Variable.Local.id.Declare(String)
+V.Local.shold.Declare(String)
+
+V.Local.Employee.Declare(String)
+V.Local.Name.Declare(String)
+V.Local.override.Declare(String)
+V.Local.overrideRate.Declare(String)
+V.Local.Job.Declare(String)
+V.Local.sHours.Declare(String)
+V.Local.sType.Declare(String)
+V.Local.sEC.Declare(String)
+V.Local.filler.Declare(String)
+
+Variable.local.file.declare(Long)
+Variable.Local.I.declare(Long)
+
+V.Local.shold.Set(V.Screen.Client!txt1.Text)
+F.Intrinsic.Control.If(V.Local.shold.Trim,=,"")
+	F.Intrinsic.UI.Msgbox("Must enter a Client Number")
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.EndIf
+
+Function.Odbc.Connection!Conx.Openconnection(Variable.Ambient.pDSN,Variable.Ambient.PUser,Variable.Ambient.PPass)
+
+'F.Intrinsic.Debug.InvokeDebugger
+'F.Intrinsic.Debug.Stop
+
+Function.Intrinsic.String.Left(Variable.Passed.888888,8,Variable.Local.date)
+Function.Intrinsic.String.Mid(Variable.Passed.888888,9,6,Variable.Local.time)
+Function.Intrinsic.String.Mid(Variable.Passed.888888,15,2,Variable.Local.id)
+Function.Intrinsic.string.Left(Variable.Screen.Client!txt1.Text,3,Variable.Local.hold)
+
+Function.Intrinsic.Control.If(Variable.Local.hold.Length,<,3)
+	Function.intrinsic.string.concat(Variable.Local.hold,"_",Variable.Local.hold)
+Function.Intrinsic.Control.EndIf
+Function.Intrinsic.File.Gethandle(Variable.Local.File)
+'Function.Intrinsic.String.Concat(Variable.Caller.FilesDir,"\E",Variable.Local.hold,"TA.txt",Variable.Local.Filename)
+Function.Intrinsic.String.Concat("C:\paychex","\",V.Local.shold,"P_","TA.TXT",Variable.Local.Filename)
+
+Function.Intrinsic.File.Openforwrite(Variable.Local.Filename,Variable.Local.File)
+
+'Function.Intrinsic.File.Writeline(Variable.Local.File,"Empl#	Name	Shift	D/E	Earn Code	Hours")
+
+'Test variables, delete when finished
+'V.Local.date.Set("20140527")
+'V.Local.time.Set("121843")
+'Original SQL statement
+'Modified SQL query removing SHIFT From SQL Statement along with associated variables.
+Function.Intrinsic.String.Build("SELECT EMPLOYEE,NAME,TYPE,DESCR,HOURS from PYRL_LABOR_XFER WHERE RUN_CYMD = '{0}' AND RUN_TIME  = '{1}'",V.Local.date,V.Local.time,V.Local.query)
+
+F.ODBC.Connection!Conx.Openrecordsetro("rstX",Variable.Local.query)
+F.Intrinsic.Control.DoUntil(V.ODBC.Conx!Rstx.Eof,=,True)
+	V.local.export.redim(0,9)
+	F.Intrinsic.string.Left(V.Screen.Client!txt1.Text,3,V.Local.hold)
+	Gui.Client.txt1.Text(Variable.Local.hold)
+	V.local.Employee.set(Variable.ODBC.Conx!Rstx.Fieldval!EMPLOYEE)
+	F.Intrinsic.String.LPad(V.Local.Employee,"0",6,V.Local.Employee)
+	V.local.export(0).set(V.Local.Employee)
+	V.Local.Name.Set(V.ODBC.Conx!rstX.FieldVal!NAME)
+'	F.Intrinsic.String.Left(V.Local.Name,25,V.Local.Name)
+'	F.Intrinsic.String.RPad(V.Local.Name," ",25,V.Local.Name)
+	F.Intrinsic.String.RPad(V.Local.Name," ",25,V.Local.Name)
+	V.Local.export(1).Set(V.Local.name)
+	F.Intrinsic.String.RPad(V.Local.override," ",6,V.Local.override)
+	V.Local.export(2).Set(V.Local.override)
+	F.Intrinsic.String.RPad(V.Local.Job," ",12,V.Local.Job)
+	V.Local.export(3).Set(V.Local.Job)
+'	Commented Out Shift field
+'	V.Local.export(4).Set(V.ODBC.Conx!rstX.FieldVal!SHIFT)
+	V.Local.export(4).Set(" ")
+	V.Local.export(5).Set("E")
+	V.Local.sType.Set(V.ODBC.Conx!rstX.FieldVal!TYPE)
+
+	F.Intrinsic.Control.If(V.Local.sType,=,"RT")
+		V.Local.sEC.Set("1 ")
+	F.Intrinsic.Control.ElseIf(V.Local.sType,=,"OT")
+		V.Local.sEC.Set("2 ")
+	F.Intrinsic.Control.ElseIf(V.Local.sType,=,"DT")
+		V.Local.sEC.Set("3 ")
+	F.Intrinsic.Control.Else
+		V.Local.sEC.Set(Variable.Odbc.Conx!Rstx.Fieldval!DESCR)
+		F.Intrinsic.String.Left(V.Local.sEC,2,V.Local.sEC)
+		F.Intrinsic.String.Trim(V.Local.sEC,V.Local.sEC)
+		F.Intrinsic.String.RPad(V.Local.sEC," ",2,V.Local.sEC)
+	F.Intrinsic.Control.EndIf
+
+	V.local.export(6).set(V.Local.sEC)
+	F.Intrinsic.String.RPad(V.Local.overrideRate," ",9,V.Local.overrideRate)
+	V.Local.export(7).Set(V.Local.overrideRate)
+
+	V.Local.sHours.Set(Variable.Odbc.Conx!Rstx.Fieldval!HOURS)
+	F.Intrinsic.String.Trim(V.Local.sHours,V.Local.sHours)
+	F.Intrinsic.String.LPad(V.Local.sHours," ",7,V.Local.sHours)
+	V.local.export(8).set(Variable.Local.sHours)
+
+
+	F.Intrinsic.String.RPad(V.Local.filler," ",57,V.Local.filler)
+	V.Local.export(9).Set(V.Local.filler)
+	V.local.hold.set("")
+	F.Intrinsic.Control.For(V.Local.I,V.Local.export.Lbound,V.Local.export.Ubound,1)
+		F.intrinsic.control.if(V.Local.I,=,0)
+			V.Local.hold.Set(V.Local.export(0))
+		F.intrinsic.control.elseif(V.Local.i,<>,0)
+'			F.intrinsic.string.concat(Variable.Local.hold,"	",Variable.Local.export(Variable.Local.I),Variable.Local.hold)
+			F.intrinsic.string.concat(V.Local.hold,V.Local.export(V.Local.I),V.Local.hold)
+		F.intrinsic.control.endif
+	F.intrinsic.control.next(V.Local.I)
+	F.Intrinsic.File.Writeline(V.Local.File,V.Local.Hold)
+	F.Odbc.Conx!Rstx.movenext
+F.intrinsic.control.loop
+F.ODBC.Conx!Rstx.Close
+
+F.Intrinsic.File.Closefile(Variable.Local.File)
+
+F.Odbc.Connection!Conx.Close
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Process_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4037_Paychex_Payroll_export_0002.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Process.End
+
+Program.Sub.unload.Start
+F.Intrinsic.Control.SetErrorHandler("unload_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+F.ODBC.Connection!Conx.Close
+Function.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("unload_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4037_Paychex_Payroll_export_0002.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.unload.End
+
+Program.Sub.Comments.Start
+${$0$}$GCG_4037_Paychex_Payroll_export_000$}$AGM$}$5/16/2016
+${$1$}$$}$$}$0$}$15290$}$PR0999-CREATE-FILE-HOOK$}$5/16/2016 4:39:53 PM$}$(Program: PR0999; Screen: PR0999)
+
+Program.Sub.Comments.End
+
